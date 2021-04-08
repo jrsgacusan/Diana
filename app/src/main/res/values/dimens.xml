@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <dimen name="design_bottom_navigation_elevation" tools:keep="@dimen/design_bottom_navigation_elevation" tools:override="true">
+        8dp
+    </dimen>
+    <dimen name="design_bottom_navigation_shadow_height" tools:keep="@dimen/design_bottom_navigation_shadow_height" tools:override="true">
+        1dp
+    </dimen>
+    <dimen name="design_bottom_navigation_icon_size" tools:ignore="UnusedResources" tools:keep="@dimen/design_bottom_navigation_icon_size" tools:override="true">
+        30dp
+    </dimen>
+    <dimen name="design_bottom_navigation_height" tools:keep="@dimen/design_bottom_navigation_height" tools:override="true">
+        70dp
+    </dimen>
+    <dimen name="design_bottom_navigation_margin" tools:keep="@dimen/design_bottom_navigation_margin" tools:override="true">
+        8dp
+    </dimen>
+    <dimen name="design_bottom_navigation_label_padding" tools:keep="@dimen/design_bottom_navigation_label_padding" tools:override="true">
+        10dp
+    </dimen>
+    <dimen name="design_bottom_navigation_text_size" tools:ignore="UnusedResources" tools:override="true">
+        12sp
+    </dimen>
+    <dimen name="design_bottom_navigation_active_text_size" tools:keep="@dimen/design_bottom_navigation_active_text_size" tools:override="true">
+        14sp
+    </dimen>
+    <dimen name="design_bottom_navigation_item_min_width" tools:keep="@dimen/design_bottom_navigation_item_min_width" tools:override="true">
+        56dp
+    </dimen>
+    <dimen name="design_bottom_navigation_item_max_width" tools:keep="@dimen/design_bottom_navigation_item_max_width" tools:override="true">
+        96dp
+    </dimen>
+    <dimen name="design_bottom_navigation_active_item_max_width" tools:keep="@dimen/design_bottom_navigation_active_item_max_width" tools:override="true">
+        168dp
+    </dimen>
+    <dimen name="design_bottom_navigation_active_item_min_width" tools:keep="@dimen/design_bottom_navigation_active_item_min_width" tools:override="true">
+        96dp
+    </dimen>
+</resources>

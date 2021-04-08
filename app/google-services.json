@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1073162762164",
+    "firebase_url": "https://occupines-1e1e9-default-rtdb.firebaseio.com",
+    "project_id": "occupines-1e1e9",
+    "storage_bucket": "occupines-1e1e9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1073162762164:android:ae9f8e252505758dc3a4e1",
+        "android_client_info": {
+          "package_name": "com.example.occupines"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1073162762164-8eqan1nfb7cojefq53qqo273fcc73mnv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKA2fPcRNZMOwP470GJHZA1Qi3BQGAKUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1073162762164-8eqan1nfb7cojefq53qqo273fcc73mnv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:overScrollMode="never"
+    tools:ignore="HardcodedText">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:contentDescription="@string/logo"
+            app:srcCompat="@mipmap/occupines_logo_foreground" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Property type"
+                android:textColor="@color/primary"
+                android:textSize="24sp" />
+
+            <CheckBox
+                android:id="@+id/checkHouse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/secondary"
+                android:text="House"
+                android:textColor="@color/primary"
+                android:textSize="18sp" />
+
+            <CheckBox
+                android:id="@+id/checkApartment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/secondary"
+                android:text="Apartment"
+                android:textColor="@color/primary"
+                android:textSize="18sp" />
+
+            <CheckBox
+                android:id="@+id/checkBoarding"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/secondary"
+                android:text="Boarding"
+                android:textColor="@color/primary"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/price"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Price"
+                android:textColor="@color/primary"
+                android:textSize="24sp" />
+
+            <CheckBox
+                android:id="@+id/checkAscending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/secondary"
+                android:text="Ascending"
+                android:textColor="@color/primary"
+                android:textSize="18sp" />
+
+            <CheckBox
+                android:id="@+id/checkDescending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/secondary"
+                android:text="Descending"
+                android:textColor="@color/primary"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
