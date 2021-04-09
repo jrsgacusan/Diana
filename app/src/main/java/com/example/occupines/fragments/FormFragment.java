@@ -75,14 +75,17 @@ public class FormFragment extends Fragment {
     private ArrayAdapter<Uri> uriArrayListAdapter;
     private ImageButton imageBtn;
 
+
+
     public FormFragment() {
         // Required empty public constructor
     }
 
-    public static FormFragment newInstance(Property property) {
+    public static FormFragment newInstance(Property property, String propertyUid) {
         FormFragment fragment = new FormFragment();
         Bundle args = new Bundle();
         args.putParcelable("property", property);
+        args.putString("uid", propertyUid);
         fragment.setArguments(args);
         return fragment;
     }
@@ -111,10 +114,41 @@ public class FormFragment extends Fragment {
             pickImageFromGallery();
         });
 
+
+
         submit.setOnClickListener(v -> {
-            Log.i(TAG, "Submit button clicked.");
-            performSubmit();
+            if (submit.getText().toString().toUpperCase()== "SUBMIT") {
+                Log.i(TAG, "Perform submit.");
+                performSubmit();
+            } else {
+                Log.i(TAG, "Perform update.");
+                performUpdate();
+            }
+
         });
+    }
+
+    private void performUpdate() {
+        String typeString = type.getSelectedItem().toString();
+        String priceString = price.getText().toString();
+        String locationString = location.getText().toString();
+        String infoString = info.getText().toString();
+        if (getArguments() != null) {
+
+            if (!priceString.isEmpty() && !locationString.isEmpty() && !infoString.isEmpty()) {
+                if (uriArrayList.isEmpty()) {
+                    String propertyUid = getArguments().getString("uid");
+                    updateDetailsOnly(propertyUid, typeString, Double.parseDouble(priceString), locationString, infoString);
+                } else if (uriArrayList.size() >= 1 && uriArrayList.size() <= 3) {
+                    Utility.showToast(getContext(), "Add a minimum of 4 images.");
+                } else if (uriArrayList.size() >= 4) {
+                    String propertyUid = getArguments().getString("uid");
+                    updateProperty(propertyUid, typeString, Double.parseDouble(priceString), locationString, infoString);
+                }
+            } else {
+                Utility.showToast(getContext(), "Some fields are empty.");
+            }
+        }
     }
 
     private void performSubmit() {
@@ -123,17 +157,96 @@ public class FormFragment extends Fragment {
         String locationString = location.getText().toString();
         String infoString = info.getText().toString();
         //Check if fields are empty
-        if (!priceString.isEmpty() && !locationString.isEmpty() && !infoString.isEmpty()) {
-            //Check if user already picked an image from gallery
-            if (!uriArrayList.isEmpty()) {
-                //Call submitProperty method
-                submitProperty(typeString, Double.parseDouble(priceString), locationString, infoString);
+
+            if (!priceString.isEmpty() && !locationString.isEmpty() && !infoString.isEmpty()) {
+                //Check if user already picked an image from gallery
+                if (uriArrayList.isEmpty() || uriArrayList.size() <= 2) {
+                    //Call submitProperty method
+                    Utility.showToast(getContext(), "Add 3 or more images");
+                } else if (uriArrayList.size() >= 3 ) {
+                    submitProperty(typeString, Double.parseDouble(priceString), locationString, infoString);
+                }
             } else {
-                Utility.showToast(getContext(), "Please choose an image.");
+                Utility.showToast(getContext(), "Some fields are empty.");
             }
-        } else {
-            Utility.showToast(getContext(), "Some fields are empty.");
-        }
+
+
+
+
+
+    }
+
+    private void updateDetailsOnly(String propertyUid, String type, double price, String location, String info) {
+        Log.i(TAG, "Update details only");
+        loadingDialog.start();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> property = new HashMap<>();
+        property.put("type", type);
+        property.put("price", price);
+        property.put("location", location);
+        property.put("owner", Objects.requireNonNull(mAuth.getCurrentUser()).getDisplayName());
+        property.put("info", info);
+        property.put("createdAt", FieldValue.serverTimestamp());
+        db.collection("properties").document(mAuth.getUid()).collection("listings").document(propertyUid)
+                .update(property)
+                .addOnCompleteListener(task -> loadingDialog.dismiss() )
+                .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(view.getContext(), "Property updated", Toast.LENGTH_LONG).show();
+                        assert getFragmentManager() != null;
+                        getFragmentManager().popBackStack();
+
+                        });
+
+
+    }
+
+    private void updateProperty(String propertyUid, String type, double price, String location, String info) {
+        loadingDialog.start();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> property = new HashMap<>();
+        property.put("type", type);
+        property.put("price", price);
+        property.put("location", location);
+        property.put("owner", Objects.requireNonNull(mAuth.getCurrentUser()).getDisplayName());
+        property.put("info", info);
+        property.put("createdAt", FieldValue.serverTimestamp());
+        Log.i(TAG, propertyUid);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("slider-images/"+propertyUid);
+        dbRef.removeValue();
+        db.collection("properties").document(mAuth.getUid()).collection("listings").document(propertyUid)
+                .update(property)
+                .addOnCompleteListener(task -> loadingDialog.dismiss() )
+                .addOnSuccessListener(aVoid -> {
+                    for (Uri uri : uriArrayList) {
+                        String fileName = UUID.randomUUID().toString();
+                        StorageReference ref = FirebaseStorage.getInstance().getReference("property/" + fileName);
+                        ref.putFile(uri)
+                                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                    @Override
+                                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                        ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                            @Override
+                                            public void onSuccess(Uri uri) {
+                                                String key = dbRef.push().getKey();
+                                                Log.i(TAG, "URI:" + uri.toString());
+                                                ImageSliderModel model = new ImageSliderModel(uri.toString(), key);
+                                                dbRef.child(key).setValue(model);
+
+                                            }
+                                        });
+                                    }
+                                });
+
+                    }
+                    Toast.makeText(view.getContext(), "Property listed", Toast.LENGTH_LONG).show();
+                    assert getFragmentManager() != null;
+                    getFragmentManager().popBackStack();
+                })
+                .addOnFailureListener(e -> {
+                    Utility.showToast(getContext(), "Error: Submission failed");
+                    Log.w(TAG, "Error writing document", e);
+                });
     }
 
 
@@ -146,10 +259,8 @@ public class FormFragment extends Fragment {
         type = view.findViewById(R.id.spinner);
         listView = view.findViewById(R.id.listView_imagesToBeUploaded);
 
-
         uriArrayListAdapter = new ArrayAdapter(view.getContext(), android.R.layout.simple_list_item_1, uriArrayList);
         listView.setAdapter(uriArrayListAdapter);
-
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
                 R.array.types, android.R.layout.simple_spinner_item);
@@ -194,12 +305,14 @@ public class FormFragment extends Fragment {
             info.setText(property.getInfo());
 
             submit.setText(R.string.save);
-            submit.setOnClickListener(v -> updateProperty(
-                    type.getSelectedItem().toString(),
-                    Double.parseDouble(price.getText().toString()),
-                    location.getText().toString(),
-                    info.getText().toString()
-            ));
+//            submit.setOnClickListener(v -> updateProperty(
+//                    type.getSelectedItem().toString(),
+//                    Double.parseDouble(price.getText().toString()),
+//                    location.getText().toString(),
+//                    info.getText().toString()
+//            ));
+        } else {
+            submit.setText("SUBMIT");
         }
     }
 
@@ -214,29 +327,31 @@ public class FormFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    //Updates property from edit property
-    private void updateProperty(String type, double price, String location, String info) {
-        loadingDialog.start();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//    //Updates property from edit property
+//    private void updateProperty(String type, double price, String location, String info) {
+//        loadingDialog.start();
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//
+//        Map<String, Object> property = new HashMap<>();
+//        property.put("type", type);
+//        property.put("price", price);
+//        property.put("location", location);
+//        property.put("info", info);
+//        property.put("updatedAt", FieldValue.serverTimestamp());
+//
+//        db.collection(COLLECTION).document(Objects.requireNonNull(mAuth.getUid()))
+//                .update(property)
+//                .addOnCompleteListener(task -> loadingDialog.dismiss())
+//                .addOnSuccessListener(aVoid -> {
+//
+//                })
+//                .addOnFailureListener(e -> {
+//                    Utility.showToast(getContext(), "Error: Submission failed");
+//                    Log.w(TAG, "Error writing document", e);
+//                });
+//    }
 
-        Map<String, Object> property = new HashMap<>();
-        property.put("type", type);
-        property.put("price", price);
-        property.put("location", location);
-        property.put("info", info);
-        property.put("updatedAt", FieldValue.serverTimestamp());
 
-        db.collection(COLLECTION).document(Objects.requireNonNull(mAuth.getUid()))
-                .update(property)
-                .addOnCompleteListener(task -> loadingDialog.dismiss())
-                .addOnSuccessListener(aVoid -> {
-
-                })
-                .addOnFailureListener(e -> {
-                    Utility.showToast(getContext(), "Error: Submission failed");
-                    Log.w(TAG, "Error writing document", e);
-                });
-    }
 
     //Submits property to firestore properties collection
     private void submitProperty(String type, double price, String location, String info) {
@@ -250,9 +365,10 @@ public class FormFragment extends Fragment {
         property.put("owner", Objects.requireNonNull(mAuth.getCurrentUser()).getDisplayName());
         property.put("info", info);
         property.put("createdAt", FieldValue.serverTimestamp());
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("slider-images/"+mAuth.getUid());
+        String docUid = UUID.randomUUID().toString();
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("slider-images/"+docUid);
         dbRef.removeValue();
-        db.collection(COLLECTION).document(Objects.requireNonNull(mAuth.getUid()))
+        db.collection("properties").document(mAuth.getUid()).collection("listings").document(docUid)
                 .set(property)
                 .addOnCompleteListener(task -> loadingDialog.dismiss() )
                 .addOnSuccessListener(aVoid -> {
@@ -266,7 +382,6 @@ public class FormFragment extends Fragment {
                                         ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                                             @Override
                                             public void onSuccess(Uri uri) {
-
                                                 String key = dbRef.push().getKey();
                                                 Log.i(TAG, "URI:" + uri.toString());
                                                 ImageSliderModel model = new ImageSliderModel(uri.toString(), key);
@@ -288,27 +403,6 @@ public class FormFragment extends Fragment {
                 });
     }
 
-    //Downloads the photo from firebase storage when editing
-    private void downloadImage(Property property) {
-//        Picasso.get().load(property.getLocalFile())
-//                .placeholder(R.drawable.ic_camera)
-//                .error(R.drawable.ic_camera)
-//                .priority(Picasso.Priority.HIGH)
-//                .networkPolicy(NetworkPolicy.OFFLINE)
-//                .centerInside()
-//                .fit()
-//                .into(photo);
-    }
 
-    //Uploads the photo chosen from gallery to firebase storage
-    private void uploadImage() {
-        //images/User id/property.jpg
-        StorageReference pathReference = storageRef.child("images").child(Objects.requireNonNull(mAuth.getUid())).child("property");
-        UploadTask uploadTask = pathReference.putFile(Utility.compressImage(Objects.requireNonNull(getContext()), imagePath));
-        uploadTask.addOnSuccessListener(taskSnapshot -> {
-            assert getFragmentManager() != null;
-            getFragmentManager().popBackStack();
-        });
-    }
 
 }

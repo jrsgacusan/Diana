@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,11 +30,15 @@ import com.example.occupines.LoadingDialog;
 import com.example.occupines.R;
 import com.example.occupines.Utility;
 import com.example.occupines.activities.MainActivity;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -49,7 +54,7 @@ import java.util.Objects;
 public class ProfileFragment extends Fragment {
 
     //Setup global variables
-    private static final String TAG = "ProfileFragment";
+    public static final String TAG = "ProfileFragment";
     private static final String COLLECTION = "properties";
     private static final int PICK_IMAGE = 123;
 
@@ -58,6 +63,12 @@ public class ProfileFragment extends Fragment {
     private FirebaseFirestore db;
     private StorageReference storageRef;
     private LoadingDialog loadingDialog;
+    private ImageButton changePicture;
+    private ImageButton editName;
+    private TextView email;
+    private Button viewProperty;
+    private Button listProperty;
+    private Button signOut;
 
     private Uri imagePath;
     private ImageView userImage;
@@ -83,18 +94,10 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        init(view);
 
-        userImage = view.findViewById(R.id.userImage);
         setImage(userImage);
 
-        ImageButton changePicture = view.findViewById(R.id.changePicture);
-        name = view.findViewById(R.id.fullName);
-        ImageButton editName = view.findViewById(R.id.editName);
-        TextView email = view.findViewById(R.id.textEmail);
-
-        Button viewProperty = view.findViewById(R.id.viewProperty);
-        Button listProperty = view.findViewById(R.id.listProperty);
-        Button signOut = view.findViewById(R.id.signOut);
 
         name.setText(Objects.requireNonNull(currentUser.getDisplayName()));
         email.setText(Objects.requireNonNull(currentUser.getEmail()));
@@ -108,42 +111,57 @@ public class ProfileFragment extends Fragment {
 
         editName.setOnClickListener(v -> changeName());
 
-        viewProperty.setOnClickListener(v -> db.collection(COLLECTION).document(currentUser.getUid())
+        viewProperty.setOnClickListener(v -> db.collection(currentUser.getUid()).document(currentUser.getUid())
                 .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        assert document != null;
-                        if (document.exists()) {
-                            Log.d(TAG, "Document exists!");
-                            setCurrentFragment(new PropertyFragment());
-                        } else {
-                            Log.d(TAG, "Document does not exist!");
-                            Utility.showToast(getContext(), "You have no property listed");
-                        }
-                    } else {
-                        Log.d(TAG, "Failed with: ", task.getException());
-                    }
+                    //go to the next fragment
+                    setCurrentFragment(new PropertyFragment());
                 }));
 
-        listProperty.setOnClickListener(v -> db.collection(COLLECTION).document(currentUser.getUid())
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        assert document != null;
-                        if (document.exists()) {
-                            Log.d(TAG, "Document exists!");
-                            Utility.showToast(getContext(), "You can only submit 1 property");
-                        } else {
-                            Log.d(TAG, "Document does not exist!");
-                            setCurrentFragment(new FormFragment());
-                        }
-                    } else {
-                        Log.d(TAG, "Failed with: ", task.getException());
-                    }
-                }));
+
+        isAvailableToList();
 
         //Show signOut dialog on signOut click
         signOut.setOnClickListener(v -> Utility.signOut(getActivity(), mAuth));
+    }
+
+    private void isAvailableToList() {
+
+        String currentUserUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Task<QuerySnapshot> propertyRef = db.collection("properties").document(currentUserUid).collection("listings").get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    int x = 0;
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()){
+                            for (QueryDocumentSnapshot listing: task.getResult()){
+                                Log.i(TAG,listing.getId() + String.valueOf(listing.getData()));
+                                x += 1;
+                            }
+                        }
+                        listProperty.setOnClickListener(v -> {
+                            if (x>=3){
+                                Toast.makeText(v.getContext(), "Cannot list more than 3 properties.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                setCurrentFragment(new FormFragment());
+                            }
+                        });
+
+                    }
+
+                });
+
+
+    }
+
+    private void init(View view) {
+        userImage = view.findViewById(R.id.userImage);
+        changePicture = view.findViewById(R.id.changePicture);
+        name = view.findViewById(R.id.fullName);
+        editName = view.findViewById(R.id.editName);
+        email = view.findViewById(R.id.textEmail);
+        viewProperty = view.findViewById(R.id.viewProperty);
+        listProperty = view.findViewById(R.id.listProperty);
+        signOut = view.findViewById(R.id.signOut);
     }
 
     //Changes current username

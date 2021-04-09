@@ -87,7 +87,7 @@ public class FifthFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_fifth, container, false);
+        View view = inflater.inflate(R.layout.fragment_maps, container, false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkUserLocationPermission();

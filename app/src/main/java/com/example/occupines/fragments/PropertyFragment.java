@@ -6,23 +6,27 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.occupines.LoadingDialog;
+import com.example.occupines.PropertyItem;
 import com.example.occupines.R;
 import com.example.occupines.adapters.PropertyAdapter;
 import com.example.occupines.models.Property;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.xwray.groupie.GroupAdapter;
+import com.xwray.groupie.ViewHolder;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -31,6 +35,7 @@ public class PropertyFragment extends Fragment {
     private static final String TAG = "PropertyFragment";
     private static final String COLLECTION = "properties";
 
+
     private String userId;
     private FirebaseFirestore db;
     private StorageReference storageRef;
@@ -38,6 +43,7 @@ public class PropertyFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private PropertyAdapter mAdapter;
+    private GroupAdapter<ViewHolder> adapter = new GroupAdapter<ViewHolder>();
     private ArrayList<Property> itemsData;
 
     public PropertyFragment() {
@@ -56,71 +62,45 @@ public class PropertyFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_property, container, false);
 
-        // 1. get a reference to recyclerView
+
         recyclerView = view.findViewById(R.id.recyclerViewProperty);
-        // 2. set layoutManger
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        // this is data for recycler view
-        itemsData = new ArrayList<>();
-        getData();
-        // 3. create an adapter
-        mAdapter = new PropertyAdapter(itemsData);
-        // 4. set adapter
-        recyclerView.setAdapter(mAdapter);
-        // 5. set item animator to DefaultAnimator
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.addItemDecoration(new DividerItemDecoration(view.getContext(), DividerItemDecoration.VERTICAL));
+        recyclerView.setAdapter(adapter);
+        fetchProperties();
+
 
         return view;
     }
 
-    private void getData() {
-        loadingDialog.start();
-        itemsData.clear();
-        db.collection(COLLECTION).document(userId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        assert document != null;
-                        if (document.exists()) {
-                            StorageReference propertyImageRef = storageRef
-                                    .child("images")
-                                    .child(userId)
-                                    .child("property");
+    private void fetchProperties() {
+        adapter.clear();
+        String currentUserUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Task<QuerySnapshot> propertyRef = db.collection("properties").document(currentUserUid).collection("listings").get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()){
+                            for (QueryDocumentSnapshot listing: task.getResult()){
+                                Log.i(TAG,listing.getId() + String.valueOf(listing.getData()));
+                                Property fetchedListing = new Property(
+                                        listing.getString("type"),
+                                        listing.getDouble("price"),
+                                        listing.getString("location"),
+                                        listing.getString("owner"),
+                                        listing.getString("info"),
+                                        listing.getId()
+                                );
 
-                            try {
-                                File localFile = File.createTempFile(userId, "jpg");
-                                propertyImageRef.getFile(localFile).addOnCompleteListener(task1 -> {
-                                    Property propertyPost = new Property(
-                                            localFile,
-                                            document.getString("type"),
-                                            Objects.requireNonNull(document.getDouble("price")),
-                                            document.getString("location"),
-                                            document.getString("owner"),
-                                            document.getString("info"),
-                                            userId);
-
-                                    itemsData.add(propertyPost);
-                                    if (mAdapter != null) mAdapter.notifyDataSetChanged();
-                                    loadingDialog.dismiss();
-                                });
-                                if (localFile.delete()) {
-                                    Log.d(TAG, "Temp file deleted");
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                adapter.add(new PropertyItem(fetchedListing, listing.getId()));
                             }
-                        } else {
-                            Log.d(TAG, "No such document");
                         }
-                    } else {
-                        Log.d(TAG, "get failed with ", task.getException());
                     }
                 });
     }
+
 
     @Override
     public void onDestroyView() {
@@ -128,4 +108,5 @@ public class PropertyFragment extends Fragment {
         recyclerView.setAdapter(null);
         super.onDestroyView();
     }
+
 }

@@ -12,6 +12,7 @@
         app:iss_auto_cycle="true"
         app:iss_delay="0"
         app:iss_period="1000"
+        app:iss_title_background="@drawable/transparent"
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

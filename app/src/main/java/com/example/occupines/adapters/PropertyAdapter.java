@@ -121,13 +121,13 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.ViewHo
                 builder.setMessage("Delete selected property?").setPositiveButton("Yes", dialogClickListener)
                         .setNegativeButton("No", dialogClickListener).show();
             });
-
-            edit.setOnClickListener(v ->
-                    context.getSupportFragmentManager()
-                            .beginTransaction()
-                            .addToBackStack("PropertyFragment")
-                            .replace(R.id.flFragment, FormFragment.newInstance(listData.get(0)))
-                            .commit());
+//
+//            edit.setOnClickListener(v ->
+//                    context.getSupportFragmentManager()
+//                            .beginTransaction()
+//                            .addToBackStack("PropertyFragment")
+//                            .replace(R.id.flFragment, FormFragment.newInstance(listData.get(0)))
+//                            .commit());
             initImageSlider(itemView);
         }
 
